@@ -1,0 +1,115 @@
+---
+title: "Distance Metrics in a Log Normal Distribution"
+author: "Dan Couture"
+output: html_document
+---
+
+```{r message=FALSE}
+library("ggplot2")
+library("ggthemes")
+library("scales") # for pretty_breaks
+library("knitr") # setting options  
+options(scipen=500000)
+set.seed(271)
+```
+
+```{r global_options, include=FALSE}
+opts_chunk$set(fig.width=8, fig.height=4)
+```
+
+## Summary
+
+This is a quick overview into a common distribution of data that can really throw off distance dependent algorithms such as clustering or similarity scores.
+
+## Background
+
+### The Standard Normal Distribution
+
+Empirical Rule
+
+For $z = \frac{x - \bar{x}}{\sigma}$
+
+| Range | Probability |
+|-------|-------------|
+| $P(|z| < 1)$ | `r 2 * (pnorm(1)-pnorm(0))` |
+| $P(|z| < 2)$ | `r 2 * (pnorm(2)-pnorm(0))` |
+| $P(|z| < 3)$ | `r 2 * (pnorm(3)-pnorm(0))` |
+| $P(|z| < 4)$ | `r 2 * (pnorm(4)-pnorm(0))` |
+
+```{r}
+df <- data.frame(esa = rnorm(1e5) * 20 + 400)
+df$esa_z <- (df$esa - mean(df$esa)) / sd(df$esa)
+  
+ggplot(df, aes(x=esa_z)) +
+  geom_histogram(aes(y=..density..), binwidth=0.25, colour="black", fill="blue", alpha=0.4) +
+  theme_economist() + scale_colour_economist() +
+  scale_x_continuous(breaks=pretty_breaks(n=21)) +
+  geom_vline(xintercept=-3:3, color="red", linetype="dashed", size=2) +
+  ggtitle("Standard Normal Distribution") +
+  ylab("Density") + xlab("z")
+```
+
+## Distances with Standard Normals
+
+For Gaussian distributions when converted to a standard normal distribution, 95% of the data points are mapped to values between -2 and 2.
+
+### Assuming Standard Normals with a Skewed Distributions
+
+```{r}
+df <- data.frame(esa = rlnorm(1e5, meanlog=3, sdlog=0.5))
+
+ggplot(df, aes(x=esa)) +
+  geom_histogram(aes(y=..density..), colour="black", fill="blue", alpha=0.4) +
+  theme_economist() + scale_colour_economist() +
+  scale_x_continuous(breaks=pretty_breaks(n=21)) +
+  ggtitle("Log Normal Distribution") +
+  ylab("Density") + xlab("esa")
+```
+
+Normalized the log normal data
+
+```{r}
+df$esa_z <- (df$esa - mean(df$esa)) / sd(df$esa)
+
+ggplot(df, aes(x=esa_z)) +
+  geom_histogram(aes(y=..density..), binwidth=0.25, colour="black", fill="blue", alpha=0.4) +
+  theme_economist() + scale_colour_economist() +
+  scale_x_continuous(breaks=pretty_breaks(n=21)) +
+  ggtitle("Normalized Log Normal Distribution") +
+  ylab("Density") + xlab("esa_z")
+```
+
+| Range | Probability |
+|-------|-------------|
+| $P(|\text{esa}_z| < 1)$ | `r sum(abs(df$esa_z) < 1) / length(df$esa_z)` |
+| $P(|\text{esa}_z| < 2)$ | `r sum(abs(df$esa_z) < 2) / length(df$esa_z)` |
+| $P(|\text{esa}_z| < 3)$ | `r sum(abs(df$esa_z) < 3) / length(df$esa_z)` |
+
+Outliers become the issue.  Minimizing the distance for the skewed metrics gets a larger focus than gaussian data.
+
+## Log Normal Distributions
+
+```{r}
+df$lesa <- log(df$esa)
+
+ggplot(df, aes(x=lesa)) +
+  geom_histogram(aes(y=..density..), binwidth=0.25, colour="black", fill="blue", alpha=0.4) +
+  theme_economist() + scale_colour_economist() +
+  scale_x_continuous(breaks=pretty_breaks(n=21)) +
+  ggtitle("Standard Normal Distribution") +
+  ylab("Density") + xlab("log(esa)")
+```
+
+### Log Normal Distances
+
+```{r}
+df$lesa_z <- (df$lesa - mean(df$lesa)) / sd(df$lesa)
+
+ggplot(df, aes(x=lesa_z)) +
+  geom_histogram(aes(y=..density..), binwidth=0.25, colour="black", fill="blue", alpha=0.4) +
+  theme_economist() + scale_colour_economist() +
+  scale_x_continuous(breaks=pretty_breaks(n=21)) +
+  geom_vline(xintercept=-3:3, color="red", linetype="dashed", size=2) +
+  ggtitle("Standard Normal Distribution") +
+  ylab("Density") + xlab("log(esa)_z")
+```
