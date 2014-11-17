@@ -23,11 +23,19 @@ This is a quick overview into a common distribution of data that can really thro
 
 ## Background
 
+### The Normal Distribution
+
+$X = \mu + \sigma z$
+
+![random walk normal distribution](normal.gif)
+
+source: [Intentando ser ingeniero](https://www.tumblr.com/search/gauss)
+
 ### The Standard Normal Distribution
 
-Empirical Rule
+Convert any normal distribution to a standard normal for easy comparison.  $z = \frac{x - \mu}{\sigma}$
 
-For $z = \frac{x - \bar{x}}{\sigma}$
+Empirical Rule
 
 | Range | Probability |
 |-------|-------------|
@@ -66,7 +74,7 @@ ggplot(df, aes(x=esa)) +
   ylab("Density") + xlab("esa")
 ```
 
-Normalized the log normal data
+Normalize the log normal data
 
 ```{r}
 df$esa_z <- (df$esa - mean(df$esa)) / sd(df$esa)
